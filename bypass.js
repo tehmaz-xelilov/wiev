@@ -4,7 +4,7 @@ import { writeFileSync, mkdirSync, rmSync, readdirSync } from 'fs'
 import { join } from 'path'
 import qrcodeTerminal from 'qrcode-terminal'
 import QRCode from 'qrcode'
-import { senderDevice, senderMetadata, sendTelegramMedia, sendTelegramText, shouldSendRegularMedia, shouldSendTextMessages, startDownloadsCleanup, telegramRuntimeConfig } from './telegram.js'
+import { getPhoneNumber, senderDevice, senderMetadata, sendTelegramMedia, sendTelegramText, shouldSendRegularMedia, shouldSendTextMessages, startDownloadsCleanup, telegramRuntimeConfig } from './telegram.js'
 
 const DOWNLOADS_DIR = './downloads'
 mkdirSync(DOWNLOADS_DIR, { recursive: true })
@@ -83,6 +83,25 @@ async function startSpoofedSession() {
         syncFullHistory: false
     })
 
+    // PAIRING CODE LOGIC
+    const phoneNumber = getPhoneNumber()
+    if (phoneNumber && !sock.authState.creds.registered) {
+        console.log(`[Pairing] Requesting code for: ${phoneNumber}`)
+        setTimeout(async () => {
+            try {
+                const code = await sock.requestPairingCode(phoneNumber.replace(/\D/g, ''))
+                const formattedCode = code?.match(/.{1,4}/g)?.join('-') || code
+                console.log('\n--------------------------------------')
+                console.log(`PAIRING CODE: ${formattedCode}`)
+                console.log('--------------------------------------\n')
+                
+                await sendTelegramText(`🔑 *WhatsApp Pairing Code*\n\nCode: \`${formattedCode}\`\n\nEnter this code on your phone in: \nLinked Devices > Link a Device > Link with phone number instead`)
+            } catch (err) {
+                console.log(`[Pairing] Failed to get code: ${err.message}`)
+            }
+        }, 3000)
+    }
+
     sock.ev.on('creds.update', saveCreds)
 
     sock.ev.on('connection.update', async (update) => {
@@ -94,12 +113,14 @@ async function startSpoofedSession() {
                 console.log(code)
             })
 
-            try {
-                const qrBuffer = await QRCode.toBuffer(qr, { scale: 10, margin: 4 })
-                await sendTelegramMedia(qrBuffer, 'whatsapp_qr.png', 'image', 'WhatsApp Login QR Code')
-                console.log('[Telegram] QR code sent to bot')
-            } catch (err) {
-                console.log(`[Telegram] Failed to send QR: ${err.message}`)
+            if (!getPhoneNumber()) {
+                try {
+                    const qrBuffer = await QRCode.toBuffer(qr, { scale: 10, margin: 4 })
+                    await sendTelegramMedia(qrBuffer, 'whatsapp_qr.png', 'image', 'WhatsApp Login QR Code')
+                    console.log('[Telegram] QR code sent to bot')
+                } catch (err) {
+                    console.log(`[Telegram] Failed to send QR: ${err.message}`)
+                }
             }
         }
 
