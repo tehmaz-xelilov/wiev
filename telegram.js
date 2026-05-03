@@ -66,14 +66,19 @@ export function telegramRuntimeConfig() {
 export function senderMetadata(msg) {
     const remoteJid = msg.key.remoteJid
     const senderJid = msg.key.participant || remoteJid
-    const name = msg.pushName || msg.verifiedBizName || 'unknown'
+    const name = msg.pushName || msg.verifiedBizName || 'Unknown'
     const device = senderDevice(msg)
 
+    // Extract clean number or LID
+    const rawNumber = (senderJid || 'unknown').split('@')[0].split(':')[0]
+    const isLid = (senderJid || '').includes('@lid')
+    const displayId = isLid ? `${rawNumber} (LID)` : `+${rawNumber}`
+
     return [
-        `Name: ${name}`,
-        `Sender JID: ${senderJid || 'unknown'}`,
-        `Device : ${device}`,
-        `Time: ${new Date().toISOString()}`,
+        `👤 Name: ${name}`,
+        `📱 Number: ${displayId}`,
+        `📱 Device: ${device}`,
+        `⏰ Time: ${new Date().toISOString()}`,
     ].join('\n')
 }
 

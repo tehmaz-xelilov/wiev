@@ -1,6 +1,5 @@
 /**
- * Samsung S21 Profile Patch for @whiskeysockets/baileys
- * More common device profile to avoid detection.
+ * Reverting to frankel profile (v2.26.16.73)
  */
 import { readFileSync, writeFileSync } from 'fs'
 
@@ -12,24 +11,24 @@ if (!src.includes("import crypto") && !src.includes("import { randomUUID }")) {
     src = `import crypto from 'crypto';\n` + src
 }
 
-// 2. Force replacement of getUserAgent (Samsung S21)
+// 2. Force replacement of getUserAgent
 const newUserAgent = `const getUserAgent = (config) => {
     return {
         appVersion: {
             primary: 2,
-            secondary: 24,
-            tertiary: 12,
-            quaternary: 78
+            secondary: 26,
+            tertiary: 16,
+            quaternary: 73
         },
         platform: proto.ClientPayload.UserAgent.Platform.ANDROID,
         releaseChannel: proto.ClientPayload.UserAgent.ReleaseChannel.RELEASE,
-        osVersion: '13',
-        manufacturer: 'Samsung',
-        device: 'SM-G991B', 
-        osBuildNumber: 'TP1A.220624.014',
-        deviceBoard: 'exynos2100',
+        osVersion: '16',
+        manufacturer: 'Google',
+        device: 'frankel', 
+        osBuildNumber: 'CP1A.260405.005',
+        deviceBoard: 'frankel',
         deviceType: proto.ClientPayload.UserAgent.DeviceType.PHONE,
-        phoneId: '5f3e4e1a-8c9d-4b2a-a1b2-c3d4e5f6g7h8',
+        phoneId: crypto.randomUUID(),
         localeLanguageIso6391: 'en',
         mnc: '001',
         mcc: '310',
@@ -67,27 +66,10 @@ const newGetPlatformType = `const getPlatformType = (platform) => {
 `
 src = src.replace(/const getPlatformType = \(platform\) => \{[\s\S]*?export const generateRegistrationNode/, newGetPlatformType + 'export const generateRegistrationNode')
 
-// 6. Force replacement of companion version in generateRegistrationNode
-const oldCompanionVersion = `version: {
-            primary: 10,
-            secondary: 15,
-            tertiary: 7
-        }`
-const newCompanionVersion = `version: {
-            primary: 2,
-            secondary: 24,
-            tertiary: 12
-        }`
-
-if (src.includes(oldCompanionVersion)) {
-    src = src.replace(oldCompanionVersion, newCompanionVersion)
-    console.log('Patched generateRegistrationNode: updated companion version to 2.24.12')
-}
-
 writeFileSync(TARGET, src)
 
 console.log('--------------------------------------------------')
-console.log('SUCCESS: Baileys patched successfully (Samsung S21 Mode).')
+console.log('SUCCESS: Baileys patched successfully (Frankel Mode).')
 console.log(`Target: ${TARGET}`)
-console.log('Current Spoof: Android, Samsung SM-G991B, v2.24.12.78')
+console.log('Current Spoof: Android, frankel, v2.26.16.73')
 console.log('--------------------------------------------------\n')
