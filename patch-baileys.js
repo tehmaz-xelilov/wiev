@@ -1,5 +1,5 @@
 /**
- * Reverting to frankel profile (v2.26.16.73)
+ * Reverting to frankel profile (v2.26.16.73) as Tablet
  */
 import { readFileSync, writeFileSync } from 'fs'
 
@@ -27,7 +27,7 @@ const newUserAgent = `const getUserAgent = (config) => {
         device: 'frankel', 
         osBuildNumber: 'CP1A.260405.005',
         deviceBoard: 'frankel',
-        deviceType: proto.ClientPayload.UserAgent.DeviceType.PHONE,
+        deviceType: proto.ClientPayload.UserAgent.DeviceType.TABLET,
         phoneId: crypto.randomUUID(),
         localeLanguageIso6391: 'en',
         mnc: '001',
@@ -61,7 +61,7 @@ src = src.replace(/const getClientPayload = \(config\) => \{[\s\S]*?export const
 
 // 5. Force replacement of getPlatformType
 const newGetPlatformType = `const getPlatformType = (platform) => {
-    return proto.DeviceProps.PlatformType.ANDROID_PHONE;
+    return proto.DeviceProps.PlatformType.ANDROID_TABLET;
 };
 `
 src = src.replace(/const getPlatformType = \(platform\) => \{[\s\S]*?export const generateRegistrationNode/, newGetPlatformType + 'export const generateRegistrationNode')
@@ -69,7 +69,7 @@ src = src.replace(/const getPlatformType = \(platform\) => \{[\s\S]*?export cons
 writeFileSync(TARGET, src)
 
 console.log('--------------------------------------------------')
-console.log('SUCCESS: Baileys patched successfully (Frankel Mode).')
+console.log('SUCCESS: Baileys patched successfully (Tablet Mode).')
 console.log(`Target: ${TARGET}`)
-console.log('Current Spoof: Android, frankel, v2.26.16.73')
+console.log('Current Spoof: Android Tablet, frankel, v2.26.16.73')
 console.log('--------------------------------------------------\n')

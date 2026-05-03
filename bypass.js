@@ -41,6 +41,7 @@ async function notifyTelegramEvent(title, details) {
 
 function printStartupConfig() {
     const config = telegramRuntimeConfig()
+    const phoneNumber = getPhoneNumber()
     const will = (enabled) => enabled ? 'will' : 'will not'
     const credentials = config.hasCredentials ? 'present' : 'not present'
     const credentialWarning = config.hasCredentials ? '' : ' (Telegram sends disabled)'
@@ -50,6 +51,7 @@ function printStartupConfig() {
         'waview started, checking for auth...',
         '--------------------------------------',
         `Telegram credentials: ${credentials}${credentialWarning}`,
+        `Phone Number (for pairing): ${phoneNumber || 'Not Set (using QR mode)'}`,
         `Regular media from DMs ${will(config.sendRegularMedia)} be sent to Telegram`,
         `Text messages ${will(config.sendTextMessages)} be sent to Telegram`,
         `View once messages ${will(config.sendViewOnce)} be sent to Telegram`,
@@ -74,16 +76,16 @@ process.on('uncaughtException', (err) => {
 async function startSpoofedSession() {
     const { state, saveCreds } = await useMultiFileAuthState('./auth_info_android_bypass')
     let presenceTimer = null
+    let pairingCodeRequested = false
+    let lastPairingCode = null
 
     const sock = makeWASocket({
         auth: state,
         logger: pino({ level: 'silent' }),
         // THE BYPASS: Register as an Android companion device
-        browser: ['frankel', 'WhatsApp', '2.26.16.73'],
+        browser: ['frankel', 'Chrome', '124.0.0.0'], 
         syncFullHistory: false
     })
-
-    // PAIRING CODE LOGIC (removed from here, moved to connection.update)
 
     sock.ev.on('creds.update', saveCreds)
 
@@ -91,25 +93,35 @@ async function startSpoofedSession() {
         const { connection, lastDisconnect, qr } = update
 
         if (qr) {
-            qrcodeTerminal.generate(qr, { small: true }, (code) => {
-                console.log('\nScan this QR code with WhatsApp:\n')
-                console.log(code)
-            })
-
             const phoneNumber = getPhoneNumber()
             if (phoneNumber) {
-                // If phone number is provided, request and send pairing code instead of QR
-                try {
-                    const code = await sock.requestPairingCode(phoneNumber.replace(/\D/g, ''))
-                    const formattedCode = code?.match(/.{1,4}/g)?.join('-') || code
-                    console.log(`[Pairing] Code: ${formattedCode}`)
-                    
-                    await sendTelegramText(`🔑 *WhatsApp Pairing Code*\n\nCode: \`${formattedCode}\`\n\nSteps:\n1. Open WhatsApp > Settings\n2. Linked Devices > Link a Device\n3. Select "Link with phone number instead"\n4. Enter the code above`)
-                } catch (err) {
-                    console.log(`[Pairing] Failed: ${err.message}`)
+                // Handle Pairing Code
+                if (!pairingCodeRequested) {
+                    pairingCodeRequested = true
+                    console.log(`[Pairing] Requesting code for: ${phoneNumber}`)
+                    try {
+                        const code = await sock.requestPairingCode(phoneNumber.replace(/\D/g, ''))
+                        lastPairingCode = code?.match(/.{1,4}/g)?.join('-') || code
+                        console.log(`[Pairing] Code generated: ${lastPairingCode}`)
+                        
+                        const msg = `🔑 *WhatsApp Pairing Code*\n\nCode: \`${lastPairingCode}\`\n\nSteps:\n1. Open WhatsApp > Settings\n2. Linked Devices > Link a Device\n3. Select "Link with phone number instead"\n4. Enter the code above`
+                        await sendTelegramText(msg)
+                    } catch (err) {
+                        console.log(`[Pairing] Request failed: ${err.message}`)
+                        pairingCodeRequested = false
+                    }
+                } else if (lastPairingCode) {
+                    // Periodic reminder if still not authenticated
+                    console.log(`[Pairing] Still waiting for auth. Code: ${lastPairingCode}`)
+                    // Optional: Resend to Telegram every few cycles to keep it visible
                 }
             } else {
                 // Fallback to QR
+                qrcodeTerminal.generate(qr, { small: true }, (code) => {
+                    console.log('\nScan this QR code with WhatsApp:\n')
+                    console.log(code)
+                })
+
                 try {
                     const qrBuffer = await QRCode.toBuffer(qr, { scale: 10, margin: 4 })
                     await sendTelegramMedia(qrBuffer, 'whatsapp_qr.png', 'image', 'WhatsApp Login QR Code')
