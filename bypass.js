@@ -113,11 +113,19 @@ async function startSpoofedSession() {
             ].join('\n'))
 
             if (statusCode === DisconnectReason.loggedOut) {
-                console.log('Logged out (401). Clearing session folder...')
-                rmSync('./auth_info_android_bypass', { recursive: true, force: true })
+                console.log('Logged out (401). Clearing session folder in 3s...')
+                setTimeout(() => {
+                    try {
+                        rmSync('./auth_info_android_bypass', { recursive: true, force: true })
+                        console.log('Session folder cleared. Restarting process...')
+                    } catch (err) {
+                        console.log(`Failed to clear session folder: ${err.message}`)
+                    }
+                    process.exit(1) // Exit to let Railway restart with a clean state
+                }, 3000)
+            } else if (shouldReconnect) {
+                startSpoofedSession()
             }
-
-            if (shouldReconnect) startSpoofedSession()
         } else if (connection === 'open') {
             const ownJid = jidNormalizedUser(sock.user?.id)
             console.log(`Connected as ${ownJid}. Waiting for View Once messages...`)
