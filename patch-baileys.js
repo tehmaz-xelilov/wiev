@@ -1,6 +1,6 @@
 /**
- * Robust post-install patch for @whiskeysockets/baileys
- * Forces Android spoofing regardless of current state.
+ * Fixed robust post-install patch for @whiskeysockets/baileys
+ * Handles syntax correctly by avoiding leftover braces.
  */
 import { readFileSync, writeFileSync } from 'fs'
 
@@ -12,7 +12,7 @@ if (!src.includes("import crypto") && !src.includes("import { randomUUID }")) {
     src = `import crypto from 'crypto';\n` + src
 }
 
-// 2. Force replacement of getUserAgent
+// 2. Force replacement of getUserAgent (matching until PLATFORM_MAP)
 const newUserAgent = `const getUserAgent = (config) => {
     return {
         appVersion: {
@@ -35,18 +35,18 @@ const newUserAgent = `const getUserAgent = (config) => {
         mcc: '310',
         localeCountryIso31661Alpha2: 'US'
     };
-};`
+};
+`
+src = src.replace(/const getUserAgent = \(config\) => \{[\s\S]*?const PLATFORM_MAP/, newUserAgent + 'const PLATFORM_MAP')
 
-src = src.replace(/const getUserAgent = \(config\) => \{[\s\S]*?\};/, newUserAgent)
-
-// 3. Force replacement of getWebInfo
+// 3. Force replacement of getWebInfo (matching until getClientPayload)
 const newWebInfo = `const getWebInfo = (config) => {
     return undefined;
-};`
+};
+`
+src = src.replace(/const getWebInfo = \(config\) => \{[\s\S]*?const getClientPayload/, newWebInfo + 'const getClientPayload')
 
-src = src.replace(/const getWebInfo = \(config\) => \{[\s\S]*?\};/, newWebInfo)
-
-// 4. Force replacement of getClientPayload
+// 4. Force replacement of getClientPayload (matching until generateLoginNode)
 const newClientPayload = `const getClientPayload = (config) => {
     const payload = {
         connectType: proto.ClientPayload.ConnectType.WIFI_UNKNOWN,
@@ -56,21 +56,21 @@ const newClientPayload = `const getClientPayload = (config) => {
     const webInfo = getWebInfo(config);
     if (webInfo) payload.webInfo = webInfo;
     return payload;
-};`
+};
+`
+src = src.replace(/const getClientPayload = \(config\) => \{[\s\S]*?export const generateLoginNode/, newClientPayload + 'export const generateLoginNode')
 
-src = src.replace(/const getClientPayload = \(config\) => \{[\s\S]*?\};/, newClientPayload)
-
-// 5. Force replacement of getPlatformType
+// 5. Force replacement of getPlatformType (matching until generateRegistrationNode)
 const newGetPlatformType = `const getPlatformType = (platform) => {
     return proto.DeviceProps.PlatformType.ANDROID_PHONE;
-};`
-
-src = src.replace(/const getPlatformType = \(platform\) => \{[\s\S]*?\};/, newGetPlatformType)
+};
+`
+src = src.replace(/const getPlatformType = \(platform\) => \{[\s\S]*?export const generateRegistrationNode/, newGetPlatformType + 'export const generateRegistrationNode')
 
 writeFileSync(TARGET, src)
 
 console.log('--------------------------------------------------')
-console.log('SUCCESS: Baileys patched successfully (Robust Mode).')
+console.log('SUCCESS: Baileys patched successfully (Fixed Robust Mode).')
 console.log(`Target: ${TARGET}`)
 console.log('Current Spoof: Android, Pixel 8 Pro, v2.24.13.77')
 console.log('--------------------------------------------------\n')
