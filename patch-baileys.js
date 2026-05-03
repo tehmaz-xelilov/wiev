@@ -34,16 +34,16 @@ const newUserAgent = `const getUserAgent = (config) => {
         appVersion: {
             primary: 2,
             secondary: 24,
-            tertiary: 10,
-            quaternary: 84
+            tertiary: 13,
+            quaternary: 77
         },
         platform: proto.ClientPayload.UserAgent.Platform.ANDROID,
         releaseChannel: proto.ClientPayload.UserAgent.ReleaseChannel.RELEASE,
-        osVersion: '13',
+        osVersion: '14',
         manufacturer: 'Google',
-        device: 'Pixel 7', 
-        osBuildNumber: 'TQ3A.230901.001',
-        deviceBoard: 'cheetah',
+        device: 'Pixel 8 Pro', 
+        osBuildNumber: 'UD1A.231105.004',
+        deviceBoard: 'shiba',
         deviceType: proto.ClientPayload.UserAgent.DeviceType.PHONE,
         phoneId: crypto.randomUUID(),
         localeLanguageIso6391: 'en',
