@@ -79,7 +79,7 @@ async function startSpoofedSession() {
         auth: state,
         logger: pino({ level: 'silent' }),
         // THE BYPASS: Register as an Android companion device
-        browser: ['Pixel 6', 'WhatsApp', '2.24.5.76'],
+        browser: ['Pixel 7', 'WhatsApp', '2.26.16.73'],
         syncFullHistory: false
     })
 
