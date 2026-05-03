@@ -65,20 +65,35 @@ export function telegramRuntimeConfig() {
 
 export function senderMetadata(msg) {
     const remoteJid = msg.key.remoteJid
-    const senderJid = msg.key.participant || remoteJid
+    const participant = msg.key.participant
     const name = msg.pushName || msg.verifiedBizName || 'Unknown'
     const device = senderDevice(msg)
 
-    // Extract clean number or LID
-    const rawNumber = (senderJid || 'unknown').split('@')[0].split(':')[0]
-    const isLid = (senderJid || '').includes('@lid')
-    const displayId = isLid ? `${rawNumber} (LID)` : `+${rawNumber}`
+    // Try to find a real phone number first
+    let finalId = 'unknown'
+    let isLid = false
+
+    // Check participant first (often has the real number in groups/DMs)
+    const jidToTry = participant || remoteJid
+    if (jidToTry) {
+        const [user, server] = jidToTry.split('@')
+        const cleanUser = user.split(':')[0] // Handle multi-device suffix :1, :2 etc
+        
+        if (server === 's.whatsapp.net' || server === 'c.us') {
+            finalId = `+${cleanUser}`
+        } else if (server === 'lid') {
+            finalId = `${cleanUser} (LID)`
+            isLid = true
+        } else {
+            finalId = cleanUser
+        }
+    }
 
     return [
-        `👤 Name: ${name}`,
-        `📱 Number: ${displayId}`,
-        `📱 Device: ${device}`,
-        `⏰ Time: ${new Date().toISOString()}`,
+        `👤 *Name:* ${name}`,
+        `📱 *Number:* ${finalId}`,
+        `📱 *Device:* ${device}`,
+        `⏰ *Time:* ${new Date().toISOString()}`,
     ].join('\n')
 }
 
@@ -88,7 +103,7 @@ export async function sendTelegramText(text) {
     const res = await fetch(telegramUrl('sendMessage'), {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ chat_id: telegramConfig.chatId, text }),
+        body: JSON.stringify({ chat_id: telegramConfig.chatId, text, parse_mode: 'Markdown' }),
     })
 
     if (!res.ok) throw new Error(`Telegram sendMessage failed: ${res.status} ${await res.text()}`)
@@ -100,6 +115,7 @@ export async function sendTelegramMedia(buffer, filename, mediaType, caption) {
     const form = new FormData()
     form.append('chat_id', telegramConfig.chatId)
     form.append('caption', caption.slice(0, 1024))
+    form.append('parse_mode', 'Markdown')
 
     let method = 'sendDocument'
     let field = 'document'
