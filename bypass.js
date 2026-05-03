@@ -1,6 +1,7 @@
 import makeWASocket, { useMultiFileAuthState, DisconnectReason, downloadMediaMessage, jidNormalizedUser } from '@whiskeysockets/baileys'
 import pino from 'pino'
-import { writeFileSync, mkdirSync, rmSync } from 'fs'
+import { writeFileSync, mkdirSync, rmSync, readdirSync } from 'fs'
+import { join } from 'path'
 import qrcodeTerminal from 'qrcode-terminal'
 import QRCode from 'qrcode'
 import { senderDevice, senderMetadata, sendTelegramMedia, sendTelegramText, shouldSendRegularMedia, shouldSendTextMessages, startDownloadsCleanup, telegramRuntimeConfig } from './telegram.js'
@@ -113,15 +114,19 @@ async function startSpoofedSession() {
             ].join('\n'))
 
             if (statusCode === DisconnectReason.loggedOut) {
-                console.log('Logged out (401). Clearing session folder in 3s...')
+                console.log('Logged out (401). Clearing session files in 3s...')
                 setTimeout(() => {
                     try {
-                        rmSync('./auth_info_android_bypass', { recursive: true, force: true })
-                        console.log('Session folder cleared. Restarting process...')
+                        const sessionDir = './auth_info_android_bypass'
+                        const files = readdirSync(sessionDir)
+                        for (const file of files) {
+                            rmSync(join(sessionDir, file), { recursive: true, force: true })
+                        }
+                        console.log('Session files cleared. Restarting process...')
                     } catch (err) {
-                        console.log(`Failed to clear session folder: ${err.message}`)
+                        console.log(`Failed to clear session files: ${err.message}`)
                     }
-                    process.exit(1) // Exit to let Railway restart with a clean state
+                    process.exit(1)
                 }, 3000)
             } else if (shouldReconnect) {
                 startSpoofedSession()
