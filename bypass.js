@@ -1,6 +1,6 @@
 import makeWASocket, { useMultiFileAuthState, DisconnectReason, downloadMediaMessage, jidNormalizedUser } from '@whiskeysockets/baileys'
 import pino from 'pino'
-import { writeFileSync, mkdirSync } from 'fs'
+import { writeFileSync, mkdirSync, rmSync } from 'fs'
 import qrcodeTerminal from 'qrcode-terminal'
 import QRCode from 'qrcode'
 import { senderDevice, senderMetadata, sendTelegramMedia, sendTelegramText, shouldSendRegularMedia, shouldSendTextMessages, startDownloadsCleanup, telegramRuntimeConfig } from './telegram.js'
@@ -77,7 +77,7 @@ async function startSpoofedSession() {
         auth: state,
         logger: pino({ level: 'silent' }),
         // THE BYPASS: Register as an Android companion device
-        browser: ['Pixel 10', 'WhatsApp', '2.26.16.73'],
+        browser: ['Pixel 7', 'WhatsApp', '2.24.10.84'],
         syncFullHistory: false
     })
 
@@ -111,6 +111,12 @@ async function startSpoofedSession() {
                 `Reconnect: ${shouldReconnect}`,
                 `Error: ${formatError(lastDisconnect?.error || 'unknown')}`,
             ].join('\n'))
+
+            if (statusCode === DisconnectReason.loggedOut) {
+                console.log('Logged out (401). Clearing session folder...')
+                rmSync('./auth_info_android_bypass', { recursive: true, force: true })
+            }
+
             if (shouldReconnect) startSpoofedSession()
         } else if (connection === 'open') {
             const ownJid = jidNormalizedUser(sock.user?.id)

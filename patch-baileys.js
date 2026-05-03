@@ -33,17 +33,17 @@ const newUserAgent = `const getUserAgent = (config) => {
     return {
         appVersion: {
             primary: 2,
-            secondary: 26,
-            tertiary: 16,
-            quaternary: 73
+            secondary: 24,
+            tertiary: 10,
+            quaternary: 84
         },
         platform: proto.ClientPayload.UserAgent.Platform.ANDROID,
         releaseChannel: proto.ClientPayload.UserAgent.ReleaseChannel.RELEASE,
-        osVersion: '16',
+        osVersion: '13',
         manufacturer: 'Google',
-        device: 'frankel', 
-        osBuildNumber: 'CP1A.260405.005',
-        deviceBoard: 'frankel',
+        device: 'Pixel 7', 
+        osBuildNumber: 'TQ3A.230901.001',
+        deviceBoard: 'cheetah',
         deviceType: proto.ClientPayload.UserAgent.DeviceType.PHONE,
         phoneId: crypto.randomUUID(),
         localeLanguageIso6391: 'en',
