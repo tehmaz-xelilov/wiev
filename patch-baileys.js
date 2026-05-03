@@ -18,16 +18,16 @@ const newUserAgent = `const getUserAgent = (config) => {
         appVersion: {
             primary: 2,
             secondary: 24,
-            tertiary: 12,
-            quaternary: 78
+            tertiary: 5,
+            quaternary: 76
         },
         platform: proto.ClientPayload.UserAgent.Platform.ANDROID,
         releaseChannel: proto.ClientPayload.UserAgent.ReleaseChannel.RELEASE,
-        osVersion: '13',
+        osVersion: '12',
         manufacturer: 'Google',
-        device: 'Pixel 7 Pro', 
-        osBuildNumber: 'TQ3A.230901.001',
-        deviceBoard: 'cheetah',
+        device: 'Pixel 6', 
+        osBuildNumber: 'SQ3A.220705.004',
+        deviceBoard: 'oriole',
         deviceType: proto.ClientPayload.UserAgent.DeviceType.PHONE,
         phoneId: crypto.randomUUID(),
         localeLanguageIso6391: 'en',
@@ -72,5 +72,5 @@ writeFileSync(TARGET, src)
 console.log('--------------------------------------------------')
 console.log('SUCCESS: Baileys patched successfully (Fixed Robust Mode).')
 console.log(`Target: ${TARGET}`)
-console.log('Current Spoof: Android, Pixel 7 Pro, v2.24.12.78')
+console.log('Current Spoof: Android, Pixel 6, v2.24.5.76')
 console.log('--------------------------------------------------\n')

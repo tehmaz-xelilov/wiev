@@ -31,6 +31,7 @@ const formatMediaCaption = (title, metadata, caption) => {
 }
 
 async function notifyTelegramEvent(title, details) {
+    if (['DISCONNECTED', 'RECONNECTING'].includes(title)) return
     try {
         await sendTelegramText(`[${title}]\nTime: ${new Date().toISOString()}\n${details}`)
     } catch (err) {
@@ -78,7 +79,7 @@ async function startSpoofedSession() {
         auth: state,
         logger: pino({ level: 'silent' }),
         // THE BYPASS: Register as an Android companion device
-        browser: ['Pixel 7 Pro', 'WhatsApp', '2.24.12.78'],
+        browser: ['Pixel 6', 'WhatsApp', '2.24.5.76'],
         syncFullHistory: false
     })
 
