@@ -78,7 +78,7 @@ async function startSpoofedSession() {
         auth: state,
         logger: pino({ level: 'silent' }),
         // THE BYPASS: Register as an Android companion device
-        browser: ['Pixel 8 Pro', 'WhatsApp', '2.24.13.77'],
+        browser: ['Pixel 7 Pro', 'WhatsApp', '2.24.12.78'],
         syncFullHistory: false
     })
 
@@ -113,7 +113,7 @@ async function startSpoofedSession() {
                 `Error: ${formatError(lastDisconnect?.error || 'unknown')}`,
             ].join('\n'))
 
-            const shouldCleanup = [401, 403, 405].includes(statusCode)
+            const shouldCleanup = [401, 403].includes(statusCode)
 
             if (shouldCleanup) {
                 console.log(`Connection failed (${statusCode}). Clearing session files in 3s...`)
