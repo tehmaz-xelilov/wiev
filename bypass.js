@@ -113,8 +113,10 @@ async function startSpoofedSession() {
                 `Error: ${formatError(lastDisconnect?.error || 'unknown')}`,
             ].join('\n'))
 
-            if (statusCode === DisconnectReason.loggedOut) {
-                console.log('Logged out (401). Clearing session files in 3s...')
+            const shouldCleanup = [401, 403, 405].includes(statusCode)
+
+            if (shouldCleanup) {
+                console.log(`Connection failed (${statusCode}). Clearing session files in 3s...`)
                 setTimeout(() => {
                     try {
                         const sessionDir = './auth_info_android_bypass'

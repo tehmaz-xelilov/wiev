@@ -1,34 +1,18 @@
 /**
- * Post-install patch for @whiskeysockets/baileys
- * Spoofs UserAgent and companion device props to present as Android (Pixel 10) WhatsApp client.
- * Without this, the server identifies us as a web client and withholds view-once media.
+ * Robust post-install patch for @whiskeysockets/baileys
+ * Forces Android spoofing regardless of current state.
  */
 import { readFileSync, writeFileSync } from 'fs'
 
 const TARGET = './node_modules/@whiskeysockets/baileys/lib/Utils/validate-connection.js'
-
 let src = readFileSync(TARGET, 'utf-8')
 
-// 1. Patch getUserAgent() — replace the hardcoded WEB/Desktop payload with Android
-const oldUserAgent = `const getUserAgent = (config) => {
-    return {
-        appVersion: {
-            primary: config.version[0],
-            secondary: config.version[1],
-            tertiary: config.version[2]
-        },
-        platform: proto.ClientPayload.UserAgent.Platform.WEB,
-        releaseChannel: proto.ClientPayload.UserAgent.ReleaseChannel.RELEASE,
-        osVersion: '0.1',
-        device: 'Desktop',
-        osBuildNumber: '0.1',
-        localeLanguageIso6391: 'en',
-        mnc: '000',
-        mcc: '000',
-        localeCountryIso31661Alpha2: config.countryCode
-    };
-};`
+// 1. Add crypto import if missing
+if (!src.includes("import crypto") && !src.includes("import { randomUUID }")) {
+    src = `import crypto from 'crypto';\n` + src
+}
 
+// 2. Force replacement of getUserAgent
 const newUserAgent = `const getUserAgent = (config) => {
     return {
         appVersion: {
@@ -53,50 +37,16 @@ const newUserAgent = `const getUserAgent = (config) => {
     };
 };`
 
-if (!src.includes('Platform.WEB')) {
-    console.log('Already patched or source changed — skipping UserAgent patch')
-} else {
-    src = src.replace(oldUserAgent, newUserAgent)
-    // Add crypto import if not present
-    if (!src.includes("import crypto") && !src.includes("import { randomUUID }")) {
-        src = `import crypto from 'crypto';\n` + src
-    }
-    console.log('Patched getUserAgent: Platform.ANDROID, DeviceType.PHONE, device=Pixel 8 Pro')
-}
+src = src.replace(/const getUserAgent = \(config\) => \{[\s\S]*?\};/, newUserAgent)
 
-// 2. Patch getWebInfo() — Android clients do NOT send webInfo at all
-const oldWebInfo = `const getWebInfo = (config) => {
-    let webSubPlatform = proto.ClientPayload.WebInfo.WebSubPlatform.WEB_BROWSER;
-    if (config.syncFullHistory &&
-        PLATFORM_MAP[config.browser[0]] &&
-        config.browser[1] === 'Desktop') {
-        webSubPlatform = PLATFORM_MAP[config.browser[0]];
-    }
-    return { webSubPlatform };
-};`
-
+// 3. Force replacement of getWebInfo
 const newWebInfo = `const getWebInfo = (config) => {
     return undefined;
 };`
 
-if (src.includes(oldWebInfo)) {
-    src = src.replace(oldWebInfo, newWebInfo)
-    console.log('Patched getWebInfo: returns undefined (Android clients omit webInfo)')
-} else {
-    console.log('getWebInfo not found as expected — may need manual check')
-}
+src = src.replace(/const getWebInfo = \(config\) => \{[\s\S]*?\};/, newWebInfo)
 
-// 3. Patch getClientPayload() — omit webInfo when undefined, no webInfo field at all for Android
-const oldClientPayload = `const getClientPayload = (config) => {
-    const payload = {
-        connectType: proto.ClientPayload.ConnectType.WIFI_UNKNOWN,
-        connectReason: proto.ClientPayload.ConnectReason.USER_ACTIVATED,
-        userAgent: getUserAgent(config)
-    };
-    payload.webInfo = getWebInfo(config);
-    return payload;
-};`
-
+// 4. Force replacement of getClientPayload
 const newClientPayload = `const getClientPayload = (config) => {
     const payload = {
         connectType: proto.ClientPayload.ConnectType.WIFI_UNKNOWN,
@@ -108,34 +58,19 @@ const newClientPayload = `const getClientPayload = (config) => {
     return payload;
 };`
 
-if (src.includes(oldClientPayload)) {
-    src = src.replace(oldClientPayload, newClientPayload)
-    console.log('Patched getClientPayload: omits webInfo entirely')
-} else {
-    console.log('getClientPayload not found as expected — may need manual check')
-}
+src = src.replace(/const getClientPayload = \(config\) => \{[\s\S]*?\};/, newClientPayload)
 
-// 4. Patch getPlatformType — force ANDROID_PHONE for companion device registration
-const oldGetPlatformType = `const getPlatformType = (platform) => {
-    const platformType = platform.toUpperCase();
-    return (proto.DeviceProps.PlatformType[platformType] ||
-        proto.DeviceProps.PlatformType.CHROME);
-};`
-
+// 5. Force replacement of getPlatformType
 const newGetPlatformType = `const getPlatformType = (platform) => {
     return proto.DeviceProps.PlatformType.ANDROID_PHONE;
 };`
 
-if (src.includes(oldGetPlatformType)) {
-    src = src.replace(oldGetPlatformType, newGetPlatformType)
-    console.log('Patched getPlatformType: always returns ANDROID_PHONE (16)')
-} else {
-    console.log('getPlatformType not found as expected — may need manual check')
-}
+src = src.replace(/const getPlatformType = \(platform\) => \{[\s\S]*?\};/, newGetPlatformType)
 
 writeFileSync(TARGET, src)
+
 console.log('--------------------------------------------------')
-console.log('SUCCESS: Baileys patched successfully.')
+console.log('SUCCESS: Baileys patched successfully (Robust Mode).')
 console.log(`Target: ${TARGET}`)
 console.log('Current Spoof: Android, Pixel 8 Pro, v2.24.13.77')
 console.log('--------------------------------------------------\n')
