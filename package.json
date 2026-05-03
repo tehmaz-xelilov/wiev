@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "postinstall": "node patch-baileys.js",
-    "start": "node bypass.js"
+    "start": "node patch-baileys.js && node bypass.js"
   },
   "author": "Optimusprime123",
   "dependencies": {

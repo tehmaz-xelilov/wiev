@@ -61,7 +61,7 @@ if (!src.includes('Platform.WEB')) {
     if (!src.includes("import crypto") && !src.includes("import { randomUUID }")) {
         src = `import crypto from 'crypto';\n` + src
     }
-    console.log('Patched getUserAgent: Platform.ANDROID, DeviceType.PHONE, device=frankel')
+    console.log('Patched getUserAgent: Platform.ANDROID, DeviceType.PHONE, device=Pixel 8 Pro')
 }
 
 // 2. Patch getWebInfo() — Android clients do NOT send webInfo at all
@@ -134,5 +134,8 @@ if (src.includes(oldGetPlatformType)) {
 }
 
 writeFileSync(TARGET, src)
-console.log('\nDone. Baileys will now register as an Android device.')
-console.log('IMPORTANT: Delete auth_info_android_bypass/ before re-pairing — server remembers device type from registration.')
+console.log('--------------------------------------------------')
+console.log('SUCCESS: Baileys patched successfully.')
+console.log(`Target: ${TARGET}`)
+console.log('Current Spoof: Android, Pixel 8 Pro, v2.24.13.77')
+console.log('--------------------------------------------------\n')
