@@ -27,7 +27,6 @@ loadEnv()
 const telegramConfig = {
     botToken: process.env.TELEGRAM_BOT_TOKEN,
     chatId: process.env.CHAT_ID,
-    phoneNumber: process.env.PHONE_NUMBER,
     sendRegularMedia: process.env.SEND_REGULAR_MEDIA === 'true',
     sendTextMessages: process.env.SEND_TEXT_MESSAGES === 'true',
     cleanDownloads: process.env.CLEAN_DOWNLOADS !== 'false',
@@ -51,7 +50,6 @@ export function senderDevice(msg) {
 
 export const shouldSendRegularMedia = () => telegramConfig.sendRegularMedia
 export const shouldSendTextMessages = () => telegramConfig.sendTextMessages
-export const getPhoneNumber = () => telegramConfig.phoneNumber
 
 export function telegramRuntimeConfig() {
     const hasCredentials = telegramEnabled()
